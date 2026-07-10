@@ -1,3 +1,4 @@
+# Password analyzer project - Submitted by Rajan
 from flask import Flask, render_template, request
 
 app = Flask(__name__)
@@ -9,20 +10,46 @@ def home():
 @app.route('/check', methods=['POST'])
 def check_password():
     password = request.form.get('password')
-    length = len(password)
     
-    # स्ट्रेंथ चेक करने का लॉजिक और उसका कलर
-    if length < 6:
+    # basic variables for checking complexity
+    length = len(password)
+    has_upper = False
+    has_lower = False
+    has_digit = False
+    has_special = False
+    
+    special_chars = "!@#$%^&*()-_=+[{]};:'\",<.>/?\\"
+    
+    # looping through each character (human style coding)
+    for char in password:
+        if char.isupper():
+            has_upper = True
+        elif char.islower():
+            has_lower = True
+        elif char.isdigit():
+            has_digit = True
+        elif char in special_chars:
+            has_special = True
+
+    # calculating score based on conditions
+    score = 0
+    if length >= 8: score += 1
+    if has_upper: score += 1
+    if has_lower: score += 1
+    if has_digit: score += 1
+    if has_special: score += 1
+
+    # final strength text and color logic
+    if score <= 2:
         result = "Weak"
-        color = "#ff4d4d" # लाल रंग
-    elif length < 10:
+        color = "#ff4d4d"
+    elif score <= 4:
         result = "Medium"
-        color = "#ffa64d" # ऑरेंज रंग
+        color = "#ffa64d"
     else:
         result = "Strong"
-        color = "#2db300" # हरा रंग
+        color = "#2db300"
         
-    # रिजल्ट पेज को भी सुंदर CSS कार्ड में रेंडर करना
     return f"""
     <!DOCTYPE html>
     <html>
@@ -43,6 +70,7 @@ def check_password():
         <div class="container">
             <h2>Analysis Result</h2>
             <div class="status">Strength: {result}</div>
+            <p style="color: #666; font-size: 14px;">Total Length: {length}</p>
             <br>
             <a href="/">Go Back</a>
         </div>
