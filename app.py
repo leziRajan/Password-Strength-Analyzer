@@ -1,39 +1,43 @@
 from flask import Flask, request, render_template_string
 import re
+import os
 
 app = Flask(__name__)
 
+@app.route('/')
+def home():
+    try:
+        with open('index.html', 'r', encoding='utf-8') as f:
+            return f.read()
+    except FileNotFoundError:
+        return "index.html file not found in repository!", 404
+
 @app.route('/check', methods=['POST'])
 def check_password():
-    password = request.form.get('password')
+    password = request.form.get('password') or ""
     score = 0
     feedback = []
 
-    # 1. Length Check
     if len(password) >= 8:
         score += 1
     else:
         feedback.append("Password must be at least 8 characters long.")
 
-    # 2. Number Check
     if re.search(r"\d", password):
         score += 1
     else:
         feedback.append("Include at least one number (0-9).")
 
-    # 3. Uppercase & Lowercase Check
     if re.search(r"[A-Z]", password) and re.search(r"[a-z]", password):
         score += 1
     else:
         feedback.append("Include both uppercase (A-Z) and lowercase (a-z) letters.")
 
-    # 4. Special Character Check
     if re.search(r"[ !@#$%^&*(),.?\":{}|<>_+-]", password):
         score += 1
     else:
         feedback.append("Include at least one special character (e.g., @, #, $, %).")
 
-    # Result Determining
     if score == 4:
         result = "Strong 🔥"
         color = "green"
@@ -44,7 +48,8 @@ def check_password():
         result = "Weak ❌"
         color = "red"
 
-    # Response HTML page (Fixed Go Back Link)
+    suggestions = "".join([f"<li>{f}</li>" for f in feedback]) if feedback else "<li>Your password is perfect and secure!</li>"
+
     response_html = f"""
     <html>
     <head>
@@ -59,10 +64,10 @@ def check_password():
             
             <h3 style="text-align: left; color: #333;">Suggestions:</h3>
             <ul style="text-align: left; padding-left: 20px; color: #555; line-height: 1.6;">
-                {"".join([f"<li>{f}</li>" for f in feedback]) if feedback else "<li>Your password is perfect and secure!</li>"}
+                {suggestions}
             </ul>
             <br>
-            <a href="index.html" style="display: inline-block; text-decoration: none; background: #1a66ff; color: white; padding: 10px 20px; border-radius: 5px; font-weight: bold;">Go Back</a>
+            <a href="/" style="display: inline-block; text-decoration: none; background: #1a66ff; color: white; padding: 10px 20px; border-radius: 5px; font-weight: bold;">Go Back</a>
         </div>
     </body>
     </html>
@@ -70,6 +75,5 @@ def check_password():
     return render_template_string(response_html)
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
-
-
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
